@@ -25,24 +25,21 @@ export async function POST(request: Request) {
   if (!ctx) return new Response(null, { status: 204 });
 
   const str = (v: unknown) => (typeof v === 'string' ? v : undefined);
-  after(async () => {
-    for (const e of events) {
-      const type = e.type as EventType;
-      if (!ALLOWED.includes(type)) continue;
-      await record({
-        type,
-        name: str(e.name),
-        path: str(body.path ?? e.path),
-        visitor: str(body.visitor) ?? ctx.visitor,
-        session: str(body.session),
-        referrer: str(body.referrer),
-        source: str(body.source),
-        medium: str(body.medium),
-        campaign: str(body.campaign),
-        device: ctx.device,
-        country: ctx.country,
-      }).catch((error) => console.error('analytics:', error));
-    }
-  });
+  const valid = events
+    .filter((e) => ALLOWED.includes(e.type as EventType))
+    .map((e) => ({
+      type: e.type as EventType,
+      name: str(e.name),
+      path: str(body.path ?? e.path),
+      visitor: str(body.visitor) ?? ctx.visitor,
+      session: str(body.session),
+      referrer: str(body.referrer),
+      source: str(body.source),
+      medium: str(body.medium),
+      campaign: str(body.campaign),
+      device: ctx.device,
+      country: ctx.country,
+    }));
+  if (valid.length) after(() => record(valid).catch((error) => console.error('analytics:', error)));
   return new Response(null, { status: 204 });
 }

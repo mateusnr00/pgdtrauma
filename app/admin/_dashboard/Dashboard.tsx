@@ -413,13 +413,13 @@ function SetupCard() {
       <p className={s.purchaseHint}>A contagem de visitas e cliques já está no site. Ela só precisa de um lugar para guardar os números:</p>
       <ol className={s.steps}>
         <li>
-          Na Vercel, abra o projeto <b>principios-gerais-da-traumatologia</b> e vá em <b>Storage</b>.
+          Na Cloudflare, crie um token com a permissão <b>Account → D1 → Edit</b>.
         </li>
         <li>
-          Clique em <b>Create Database</b>, escolha <b>Neon (Postgres)</b> no plano grátis e conecte ao projeto.
+          Na Vercel, em <b>Settings → Environment Variables</b>, adicione <b>CLOUDFLARE_D1_TOKEN</b> com esse token (as outras duas variáveis já estão lá).
         </li>
         <li>
-          Em <b>Deployments</b>, faça um <b>Redeploy</b> do último deploy. Pronto: os números começam a aparecer aqui.
+          Em <b>Deployments</b>, faça um <b>Redeploy</b> do último deploy.
         </li>
       </ol>
     </section>

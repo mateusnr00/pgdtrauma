@@ -1,13 +1,12 @@
 import 'server-only';
-import postgres from 'postgres';
 
 /**
- * First-party, cookie-light analytics. Every page view, section reached and click lands as one
- * row in Postgres (any provider: Neon, Supabase, Vercel Postgres…). No IP is stored; visitors
- * are an anonymous random id kept in a first-party cookie.
+ * First-party, cookie-light analytics stored in Cloudflare D1 (SQLite), reached through the
+ * Cloudflare HTTP API. Every page view, section reached and click is one row. No IP is stored;
+ * visitors are an anonymous random id kept in a first-party cookie.
  *
- * Configure with DATABASE_URL (or POSTGRES_URL). Without it, tracking is a no-op and the
- * dashboard explains how to connect a database.
+ * Configure CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_D1_DATABASE_ID and CLOUDFLARE_D1_TOKEN (a token with
+ * only "D1: Edit"). Without them, tracking is a no-op and the dashboard explains the setup.
  */
 
 export const EVENT_TYPES = ['view', 'section', 'click', 'purchase'] as const;
@@ -27,72 +26,89 @@ export type TrackEvent = {
   country?: string;
 };
 
-const TZ = 'America/Sao_Paulo';
+/** Brasília has no daylight saving time: a fixed UTC-3 offset, in seconds. */
+const TZ_OFFSET = -3 * 3600;
+const LOCAL = `(at / 1000 + ${TZ_OFFSET})`;
 
-const connectionString = () => process.env.DATABASE_URL || process.env.POSTGRES_URL || '';
-export const analyticsReady = () => Boolean(connectionString());
+const env = () => ({
+  account: process.env.CLOUDFLARE_ACCOUNT_ID ?? '',
+  database: process.env.CLOUDFLARE_D1_DATABASE_ID ?? '',
+  token: process.env.CLOUDFLARE_D1_TOKEN ?? '',
+});
 
-type Sql = ReturnType<typeof postgres>;
-const g = globalThis as unknown as { __pgtSql?: Sql; __pgtSchema?: Promise<unknown> };
+export const analyticsReady = () => {
+  const e = env();
+  return Boolean(e.account && e.database && e.token);
+};
 
-function db(): Sql {
-  if (!g.__pgtSql) {
-    g.__pgtSql = postgres(connectionString(), {
-      max: 3,
-      idle_timeout: 20,
-      connect_timeout: 10,
-      // Poolers in transaction mode (Supabase :6543, Neon -pooler) don't support prepared statements.
-      prepare: false,
-      onnotice: () => {},
-    });
+type Row = Record<string, unknown>;
+type Param = string | number | null;
+
+async function query(sql: string, params: Param[] = []): Promise<Row[]> {
+  const { account, database, token } = env();
+  const res = await fetch(`https://api.cloudflare.com/client/v4/accounts/${account}/d1/database/${database}/query`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sql, params }),
+    cache: 'no-store',
+  });
+  const body = (await res.json().catch(() => null)) as { success?: boolean; errors?: { message: string }[]; result?: { results?: Row[] }[] } | null;
+  if (!res.ok || !body?.success) {
+    throw new Error(`D1: ${body?.errors?.map((e) => e.message).join('; ') || res.status}`);
   }
-  return g.__pgtSql;
+  return body.result?.[0]?.results ?? [];
 }
 
-/** Creates the table on first use, so connecting a database is the only setup step. */
-async function ready(): Promise<Sql> {
-  const sql = db();
-  g.__pgtSchema ??= sql`
-    create table if not exists pgt_events (
-      id bigserial primary key,
-      at timestamptz not null default now(),
+/** Creates the table on first use, so the only setup is the three environment variables. */
+const g = globalThis as unknown as { __pgtSchema?: Promise<unknown> };
+async function ready() {
+  g.__pgtSchema ??= query(
+    `create table if not exists events (
+      id integer primary key autoincrement,
+      at integer not null,
       type text not null,
       name text not null default '',
-      path text,
-      visitor text,
-      session text,
-      referrer text,
-      source text,
-      medium text,
-      campaign text,
-      device text,
-      country text
+      path text, visitor text, session text, referrer text,
+      source text, medium text, campaign text, device text, country text
     );
-    create index if not exists pgt_events_at on pgt_events (at);
-    create index if not exists pgt_events_type_at on pgt_events (type, at);
-  `
-    .simple()
-    .catch((error) => {
-      g.__pgtSchema = undefined;
-      throw error;
-    });
+    create index if not exists events_at on events (at);
+    create index if not exists events_type_at on events (type, at);`,
+  ).catch((error) => {
+    g.__pgtSchema = undefined;
+    throw error;
+  });
   await g.__pgtSchema;
-  return sql;
 }
 
-const clip = (v: unknown, max = 200) => (typeof v === 'string' && v.trim() ? v.trim().slice(0, max) : null);
+const clip = (v: unknown, max = 200): string | null => (typeof v === 'string' && v.trim() ? v.trim().slice(0, max) : null);
 
-export async function record(e: TrackEvent) {
-  if (!analyticsReady()) return;
-  const sql = await ready();
-  await sql`
-    insert into pgt_events (type, name, path, visitor, session, referrer, source, medium, campaign, device, country)
-    values (
-      ${e.type}, ${clip(e.name, 120) ?? ''}, ${clip(e.path)}, ${clip(e.visitor, 64)}, ${clip(e.session, 64)},
-      ${clip(e.referrer)}, ${clip(e.source, 80)}, ${clip(e.medium, 80)}, ${clip(e.campaign, 120)},
-      ${clip(e.device, 16)}, ${clip(e.country, 4)}
-    )
-  `;
+const COLUMNS = ['at', 'type', 'name', 'path', 'visitor', 'session', 'referrer', 'source', 'medium', 'campaign', 'device', 'country'];
+
+/** Stores one or more events in a single request. */
+export async function record(events: TrackEvent | TrackEvent[]) {
+  const list = (Array.isArray(events) ? events : [events]).slice(0, 20);
+  if (!analyticsReady() || !list.length) return;
+  await ready();
+  const now = Date.now();
+  const params: Param[] = [];
+  for (const e of list) {
+    params.push(
+      now,
+      e.type,
+      clip(e.name, 120) ?? '',
+      clip(e.path),
+      clip(e.visitor, 64),
+      clip(e.session, 64),
+      clip(e.referrer),
+      clip(e.source, 80),
+      clip(e.medium, 80),
+      clip(e.campaign, 120),
+      clip(e.device, 16),
+      clip(e.country, 4),
+    );
+  }
+  const row = `(${COLUMNS.map(() => '?').join(', ')})`;
+  await query(`insert into events (${COLUMNS.join(', ')}) values ${list.map(() => row).join(', ')}`, params);
 }
 
 /* ------------------------------------------------------------------ */
@@ -119,82 +135,108 @@ export type Report = {
 };
 
 const n = (v: unknown) => Number(v ?? 0);
+const ranked = (rows: Row[]): Ranked[] => rows.map((r) => ({ label: String(r.label ?? ''), value: n(r.value) }));
 
-async function totals(sql: Sql, from: string, to: string): Promise<Totals> {
-  const [r] = await sql`
-    select
-      count(distinct visitor) filter (where type = 'view') as visitors,
-      count(*) filter (where type = 'view') as views,
-      count(distinct session) filter (where type = 'view') as sessions,
-      count(*) filter (where type = 'purchase') as purchases,
-      count(distinct visitor) filter (where type = 'purchase') as buyers
-    from pgt_events
-    where at >= ${from}::timestamptz and at < ${to}::timestamptz
-  `;
-  return { visitors: n(r.visitors), views: n(r.views), sessions: n(r.sessions), purchases: n(r.purchases), buyers: n(r.buyers) };
+async function totals(from: number, to: number): Promise<Totals> {
+  const [r] = await query(
+    `select
+      count(distinct case when type = 'view' then visitor end) as visitors,
+      sum(type = 'view') as views,
+      count(distinct case when type = 'view' then session end) as sessions,
+      sum(type = 'purchase') as purchases,
+      count(distinct case when type = 'purchase' then visitor end) as buyers
+    from events where at >= ? and at < ?`,
+    [from, to],
+  );
+  return { visitors: n(r?.visitors), views: n(r?.views), sessions: n(r?.sessions), purchases: n(r?.purchases), buyers: n(r?.buyers) };
 }
 
-const ranked = (rows: Record<string, unknown>[]): Ranked[] => rows.map((r) => ({ label: String(r.label ?? ''), value: n(r.value) }));
+/** Local (Brasília) calendar day of a timestamp, as YYYY-MM-DD. */
+const localDay = (ms: number) => new Date(ms + TZ_OFFSET * 1000).toISOString().slice(0, 10);
+
+function hostOf(url: string) {
+  const m = url.match(/^https?:\/\/([^/:?#]+)/i);
+  return m ? m[1].toLowerCase().replace(/^(www\.|m\.|l\.|lm\.)/, '') : '';
+}
 
 export async function report(days: number): Promise<Report> {
-  const sql = await ready();
-  const now = new Date();
-  const to = now.toISOString();
-  const from = new Date(now.getTime() - days * 86_400_000).toISOString();
-  const prevFrom = new Date(now.getTime() - 2 * days * 86_400_000).toISOString();
-  const range = sql`at >= ${from}::timestamptz and at < ${to}::timestamptz`;
+  await ready();
+  const to = Date.now();
+  const from = to - days * 86_400_000;
+  const prevFrom = to - 2 * days * 86_400_000;
+  const range = [from, to];
 
-  const [current, previous, liveRows, daily, sections, positions, sources, devices, countries, clicks, hours] = await Promise.all([
-    totals(sql, from, to),
-    totals(sql, prevFrom, from),
-    sql`select count(distinct visitor) as value from pgt_events where at > now() - interval '30 minutes'`,
-    sql`
-      with days as (
-        select generate_series(
-          (now() at time zone ${TZ})::date - (${days}::int - 1),
-          (now() at time zone ${TZ})::date,
-          interval '1 day'
-        )::date as day
-      )
-      select to_char(d.day, 'YYYY-MM-DD') as day,
-        count(distinct e.visitor) filter (where e.type = 'view') as visitors,
-        count(e.id) filter (where e.type = 'view') as views,
-        count(e.id) filter (where e.type = 'purchase') as purchases
-      from days d
-      left join pgt_events e on (e.at at time zone ${TZ})::date = d.day and e.at >= ${from}::timestamptz
-      group by d.day order by d.day
-    `,
-    sql`select name as label, count(distinct visitor) as value from pgt_events where type = 'section' and ${range} group by name`,
-    sql`select coalesce(nullif(name, ''), 'outro') as label, count(*) as value from pgt_events where type = 'purchase' and ${range} group by 1 order by 2 desc`,
-    sql`
-      select label, count(distinct visitor) as value from (
-        select visitor,
-          coalesce(
-            nullif(source, ''),
-            nullif(regexp_replace(substring(referrer from '^https?://([^/:?#]+)'), '^(www\\.|m\\.|l\\.|lm\\.)', ''), ''),
-            'Direto'
-          ) as label
-        from pgt_events where type = 'view' and ${range}
-      ) t group by label order by 2 desc limit 8
-    `,
-    sql`select coalesce(device, 'desconhecido') as label, count(distinct visitor) as value from pgt_events where type = 'view' and ${range} group by 1 order by 2 desc`,
-    sql`select coalesce(country, '??') as label, count(distinct visitor) as value from pgt_events where type = 'view' and ${range} group by 1 order by 2 desc limit 6`,
-    sql`select name as label, count(*) as value from pgt_events where type = 'click' and ${range} group by name order by 2 desc limit 10`,
-    sql`
-      select extract(hour from at at time zone ${TZ})::int as label, count(*) as value
-      from pgt_events where type = 'view' and ${range} group by 1 order by 1
-    `,
+  const [current, previous, liveRows, dailyRows, sections, positions, sourceRows, devices, countries, clicks, hours] = await Promise.all([
+    totals(from, to),
+    totals(prevFrom, from),
+    query(`select count(distinct visitor) as value from events where at > ?`, [to - 30 * 60_000]),
+    query(
+      `select date(${LOCAL}, 'unixepoch') as day,
+        count(distinct case when type = 'view' then visitor end) as visitors,
+        sum(type = 'view') as views,
+        sum(type = 'purchase') as purchases
+      from events where at >= ? and at < ? group by day`,
+      range,
+    ),
+    query(`select name as label, count(distinct visitor) as value from events where type = 'section' and at >= ? and at < ? group by name`, range),
+    query(
+      `select coalesce(nullif(name, ''), 'outro') as label, count(*) as value from events
+      where type = 'purchase' and at >= ? and at < ? group by label order by value desc`,
+      range,
+    ),
+    query(
+      `select coalesce(source, '') as source, coalesce(referrer, '') as referrer, count(distinct visitor) as value
+      from events where type = 'view' and at >= ? and at < ? group by 1, 2`,
+      range,
+    ),
+    query(
+      `select coalesce(device, 'desconhecido') as label, count(distinct visitor) as value from events
+      where type = 'view' and at >= ? and at < ? group by label order by value desc`,
+      range,
+    ),
+    query(
+      `select coalesce(country, '??') as label, count(distinct visitor) as value from events
+      where type = 'view' and at >= ? and at < ? group by label order by value desc limit 6`,
+      range,
+    ),
+    query(
+      `select name as label, count(*) as value from events
+      where type = 'click' and at >= ? and at < ? group by name order by value desc limit 10`,
+      range,
+    ),
+    query(
+      `select cast(strftime('%H', ${LOCAL}, 'unixepoch') as integer) as label, count(*) as value from events
+      where type = 'view' and at >= ? and at < ? group by label order by label`,
+      range,
+    ),
   ]);
+
+  // Every day of the period, including days without visits.
+  const byDay = new Map(dailyRows.map((r) => [String(r.day), r]));
+  const daily: DayRow[] = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const day = localDay(to - i * 86_400_000);
+    const r = byDay.get(day);
+    daily.push({ day, visitors: n(r?.visitors), views: n(r?.views), purchases: n(r?.purchases) });
+  }
+
+  // Origin: the campaign tag when there is one, else the referring site, else "Direto".
+  const sourceTotals = new Map<string, number>();
+  for (const r of sourceRows) {
+    const label = String(r.source || '') || hostOf(String(r.referrer || '')) || 'Direto';
+    sourceTotals.set(label, (sourceTotals.get(label) ?? 0) + n(r.value));
+  }
+  const sources = [...sourceTotals].map(([label, value]) => ({ label, value })).sort((a, b) => b.value - a.value).slice(0, 8);
 
   return {
     days,
     current,
     previous,
     live: n(liveRows[0]?.value),
-    daily: daily.map((r) => ({ day: String(r.day), visitors: n(r.visitors), views: n(r.views), purchases: n(r.purchases) })),
+    daily,
     sections: ranked(sections),
     positions: ranked(positions),
-    sources: ranked(sources),
+    sources,
     devices: ranked(devices),
     countries: ranked(countries),
     clicks: ranked(clicks),
@@ -202,8 +244,8 @@ export async function report(days: number): Promise<Report> {
   };
 }
 
-/** Wipes every recorded event (used by the "zerar dados" button). */
+/** Wipes every recorded event (used by the "zerar métricas" button). */
 export async function resetAnalytics() {
-  const sql = await ready();
-  await sql`truncate pgt_events`;
+  await ready();
+  await query('delete from events');
 }
