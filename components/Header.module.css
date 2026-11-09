@@ -1,0 +1,185 @@
+.header {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 50;
+  color: var(--fg);
+  transition: color var(--d-2) var(--ease-out);
+}
+
+/* The translucent layer lives on a pseudo-element so it can fade without touching the content. */
+.header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  /* Near-opaque instead of backdrop-filter: a live blur re-renders everything that scrolls under it. */
+  background: color-mix(in srgb, var(--bg) 93%, transparent);
+  border-bottom: 1px solid var(--line);
+  opacity: 0;
+  transition:
+    opacity var(--d-2) var(--ease-out),
+    background-color var(--d-2) var(--ease-out);
+}
+.header[data-scrolled]::before,
+.header[data-open]::before { opacity: 1; }
+
+.bar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--s-6);
+  height: 5rem;
+  transition: height var(--d-2) var(--ease-out);
+}
+.header[data-scrolled] .bar { height: var(--header-h); }
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-3);
+  margin-right: auto;
+  font-size: 0.875rem;
+  letter-spacing: -0.005em;
+  white-space: nowrap;
+}
+
+.brandMark {
+  position: relative;
+  width: 1.125rem;
+  height: 1.125rem;
+  border: 1px solid var(--accent);
+  border-radius: 50%;
+  flex: none;
+}
+.brandMark::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  right: 1px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.brandLight { color: var(--fg-2); font-weight: 400; }
+.brandStrong { font-weight: 600; }
+
+.nav { display: none; }
+
+.navList {
+  display: flex;
+  gap: clamp(1.25rem, 2.2vw, 2.25rem);
+}
+
+.navLink {
+  position: relative;
+  display: inline-block;
+  padding-block: var(--s-2);
+  font-size: 0.875rem;
+  color: var(--fg-2);
+  transition: color var(--d-2) var(--ease-out);
+}
+.navLink::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0.2rem;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform var(--d-2) var(--ease-out);
+}
+.navLink:hover,
+.navLink[aria-current] { color: var(--fg); }
+.navLink:hover::after,
+.navLink[aria-current]::after {
+  transform: scaleX(1);
+  transform-origin: left;
+}
+
+.cta {
+  display: none;
+  min-height: 2.5rem;
+  padding: 0 var(--s-5);
+  font-size: 0.8125rem;
+}
+
+/* Mobile toggle: two lines that fold into a cross. */
+.toggle {
+  position: relative;
+  width: 2.75rem;
+  height: 2.75rem;
+  margin-right: calc(var(--s-3) * -1);
+  display: grid;
+  place-content: center;
+  gap: 6px;
+}
+.toggleLine {
+  display: block;
+  width: 1.25rem;
+  height: 1.5px;
+  background: currentColor;
+  border-radius: 1px;
+  transition: transform var(--d-2) var(--ease-out);
+}
+.header[data-open] .toggleLine:nth-child(2) { transform: translateY(3.75px) rotate(45deg); }
+.header[data-open] .toggleLine:nth-child(3) { transform: translateY(-3.75px) rotate(-45deg); }
+
+.sheet {
+  position: fixed;
+  inset: 0;
+  top: 0;
+  z-index: -1;
+  padding-top: calc(5rem + var(--s-6));
+  padding-bottom: var(--s-7);
+  background: var(--bg);
+  overflow-y: auto;
+  animation: sheet-in var(--d-3) var(--ease-out) both;
+}
+.sheet[hidden] { display: none; }
+
+.sheetList { display: grid; gap: var(--s-1); }
+
+.sheetList li {
+  border-bottom: 1px solid var(--line);
+  animation: item-in var(--d-3) var(--ease-out) both;
+  animation-delay: calc(var(--i) * 50ms + 80ms);
+}
+
+.sheetLink {
+  display: block;
+  padding-block: var(--s-4);
+  font-size: clamp(1.75rem, 7vw, 2.5rem);
+  font-weight: 500;
+  letter-spacing: var(--tracking-heading);
+}
+
+.sheetCta {
+  margin-top: var(--s-7);
+  width: 100%;
+  animation: item-in var(--d-3) var(--ease-out) 360ms both;
+}
+
+@keyframes sheet-in {
+  from { opacity: 0; }
+}
+@keyframes item-in {
+  from { opacity: 0; transform: translateY(12px); }
+}
+
+@media (max-width: 479px) {
+  .brandLight { display: none; }
+}
+
+@media (min-width: 1024px) {
+  .nav { display: block; }
+  .cta { display: inline-flex; }
+  .toggle,
+  .sheet { display: none; }
+}
+
+@media (min-width: 1024px) and (max-width: 1199px) {
+  .brandLight { display: none; }
+}

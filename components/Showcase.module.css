@@ -1,0 +1,242 @@
+.section {
+  position: relative;
+  padding-top: calc(var(--section-y) * 0.5);
+  padding-bottom: var(--section-y);
+}
+
+.intro { margin-bottom: var(--s-6); }
+
+@media (min-width: 1024px) {
+  /* On desktop the kicker rides with the pinned stage instead. */
+  .intro { margin-bottom: 0; }
+}
+
+.steps {
+  display: grid;
+  gap: clamp(4.5rem, 3rem + 6vw, 7rem);
+}
+
+.kicker {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-3);
+  margin-bottom: var(--s-4);
+  font-size: var(--t-micro);
+  font-weight: 600;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.count {
+  font-variant-numeric: tabular-nums;
+  color: var(--fg-3);
+}
+
+.title {
+  font-size: var(--t-h2);
+  line-height: 1.04;
+  letter-spacing: var(--tracking-heading);
+  max-width: 14ch;
+}
+
+.body {
+  max-width: 30rem;
+  margin-top: var(--s-5);
+  font-size: var(--t-lead);
+  line-height: 1.5;
+  color: var(--fg-2);
+}
+
+/* ---------- Visuals ---------- */
+.visual {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.img {
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.visual[data-variant='object'] .img {
+  filter: drop-shadow(0 2rem 2.5rem rgb(0 0 0 / 0.5)) drop-shadow(0 0.4rem 0.8rem rgb(0 0 0 / 0.3));
+}
+
+/* Macro crop of the spine; edges dissolve into the page instead of forming a card. */
+.visual[data-variant='detail'] {
+  overflow: hidden;
+  aspect-ratio: 4 / 5;
+  width: auto;
+  height: 100%;
+  max-width: 100%;
+  margin-inline: auto;
+  -webkit-mask-image: radial-gradient(85% 72% at 40% 46%, #000 58%, transparent 100%);
+  mask-image: radial-gradient(85% 72% at 40% 46%, #000 58%, transparent 100%);
+}
+.visual[data-variant='detail'] .img {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  object-fit: cover;
+  object-position: 0% 40%;
+  transform: scale(1.6);
+  transform-origin: 0% 30%;
+}
+
+.visual[data-variant='photo'] .img {
+  border-radius: var(--r-md);
+  box-shadow: 0 2rem 4rem -1.5rem rgb(0 0 0 / 0.6);
+}
+
+/* ---------- Pinned stage: shared by the mobile and desktop narratives ---------- */
+.frame {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    opacity var(--d-3) var(--ease-out),
+    transform var(--d-4) var(--ease-out);
+  will-change: transform, opacity;
+}
+.frame[data-state='next'] { opacity: 0; transform: translate3d(0, 5%, 0) scale(0.96); }
+.frame[data-state='past'] { opacity: 0; transform: translate3d(0, -4%, 0) scale(1.02); }
+.frame[data-state='on'] { opacity: 1; transform: none; }
+
+.progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--s-4);
+  font-size: var(--t-micro);
+  font-weight: 600;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--fg-3);
+}
+.progressLabel { min-width: 9rem; text-align: right; }
+.progressTrack { display: flex; gap: 6px; }
+.tick {
+  width: 1.5rem;
+  height: 1px;
+  background: var(--line);
+  transition: background-color var(--d-2) var(--ease-out);
+}
+.tick[data-on] { background: var(--accent); }
+
+.text { transition: opacity var(--d-3) var(--ease-out); }
+
+/* ---------- Fallback (no JS or reduced motion): a simple stacked story ---------- */
+.inlineVisual {
+  height: min(110vw, 34rem);
+  margin-bottom: var(--s-6);
+}
+.stage { display: none; }
+
+@media (max-width: 1023px) {
+  .visual[data-variant='detail'] .img {
+    transform: scale(1.4);
+    transform-origin: 0% 12%;
+  }
+
+  /* ---------- Mobile / tablet narrative: the book pins at the top, the text scrolls beneath ---------- */
+  :global(.js:not(.rm)) .layout {
+    display: flex;
+    flex-direction: column;
+  }
+  :global(.js:not(.rm)) .inlineVisual { display: none; }
+
+  :global(.js:not(.rm)) .stage {
+    display: block;
+    order: -1;
+    position: sticky;
+    top: var(--header-h);
+    z-index: 1;
+    height: min(54svh, 118vw);
+    margin-inline: calc(var(--gutter) * -1);
+    background: var(--bg);
+  }
+  /* Text dissolves as it slides under the pinned book. */
+  :global(.js:not(.rm)) .stage::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 100%;
+    height: 3.5rem;
+    background: linear-gradient(var(--bg), transparent);
+    pointer-events: none;
+  }
+  :global(.js:not(.rm)) .stageInner {
+    position: absolute;
+    inset: var(--s-4) var(--gutter) 2.75rem;
+  }
+  :global(.js:not(.rm)) .progress { bottom: -2rem; }
+  :global(.js:not(.rm)) .progressLabel { min-width: 0; }
+
+  :global(.js:not(.rm)) .steps {
+    gap: 0;
+    padding-bottom: 12svh;
+  }
+  :global(.js:not(.rm)) .step {
+    min-height: 58svh;
+    padding-top: var(--s-7);
+  }
+  :global(.js:not(.rm)) .text { opacity: 0.22; }
+  :global(.js:not(.rm)) .step[data-active] .text { opacity: 1; }
+}
+
+/* ---------- Desktop narrative: text scrolls on the left, the book stays on the right ---------- */
+@media (min-width: 1024px) {
+  .layout {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: var(--s-6);
+  }
+
+  .steps {
+    grid-column: 1 / span 5;
+    gap: 0;
+  }
+
+  .inlineVisual { display: none; }
+
+  .step {
+    min-height: 100svh;
+    display: flex;
+    align-items: center;
+  }
+
+  .text { opacity: 0.22; }
+  .step[data-active] .text { opacity: 1; }
+
+  .stage {
+    display: block;
+    grid-column: 6 / span 7;
+    position: sticky;
+    top: 0;
+    height: 100svh;
+    align-self: start;
+  }
+
+  .stageInner {
+    position: absolute;
+    inset: calc(var(--header-h) + 7svh) 0 12svh;
+  }
+
+  .progress { bottom: -4svh; }
+}
+
+:global(.rm) .frame { transition: none; }

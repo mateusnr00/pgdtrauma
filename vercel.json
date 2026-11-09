@@ -1,0 +1,25 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "rewrites": [
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "admin.drmarcosrassi.com.br"
+        }
+      ],
+      "destination": "/pgdtrauma/admin"
+    },
+    {
+      "source": "/login",
+      "has": [
+        {
+          "type": "host",
+          "value": "admin.drmarcosrassi.com.br"
+        }
+      ],
+      "destination": "/pgdtrauma/admin/login"
+    }
+  ]
+}

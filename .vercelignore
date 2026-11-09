@@ -1,0 +1,6 @@
+_source
+.cache
+.claude
+.next
+node_modules
+.env*.local
