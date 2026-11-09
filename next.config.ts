@@ -10,7 +10,7 @@ const nextConfig: NextConfig = {
   experimental: {
     serverActions: {
       // The admin is reached through the main domain's proxy; allow its Origin for Server Actions.
-      allowedOrigins: ['drmarcosrassi.com.br', 'www.drmarcosrassi.com.br', ADMIN_HOST],
+      allowedOrigins: ['pgdtraumatologia.com', 'www.pgdtraumatologia.com', 'drmarcosrassi.com.br', 'www.drmarcosrassi.com.br', ADMIN_HOST],
       bodySizeLimit: '3mb',
     },
   },
@@ -25,7 +25,7 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     // The bare root has nothing on the landing-page hosts: send it to the page.
-    // (On admin.drmarcosrassi.com.br the root is the panel: see vercel.json.)
+    // (On admin.pgdtraumatologia.com the root is the panel: see vercel.json.)
     return [{ source: '/', destination: BASE_PATH, basePath: false, permanent: false, missing: onAdminHost }];
   },
   async headers() {

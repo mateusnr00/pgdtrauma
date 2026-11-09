@@ -11,4 +11,4 @@ export function withBase(path: string) {
 }
 
 /** The editing panel's own address. */
-export const ADMIN_HOST = 'admin.drmarcosrassi.com.br';
+export const ADMIN_HOST = 'admin.pgdtraumatologia.com';

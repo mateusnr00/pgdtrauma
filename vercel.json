@@ -6,7 +6,7 @@
       "has": [
         {
           "type": "host",
-          "value": "admin.drmarcosrassi.com.br"
+          "value": "admin.pgdtraumatologia.com"
         }
       ],
       "destination": "/pgdtrauma/admin"
@@ -16,7 +16,7 @@
       "has": [
         {
           "type": "host",
-          "value": "admin.drmarcosrassi.com.br"
+          "value": "admin.pgdtraumatologia.com"
         }
       ],
       "destination": "/pgdtrauma/admin/login"
