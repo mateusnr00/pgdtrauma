@@ -9,7 +9,7 @@ import { getTracking, readTracking } from '@/lib/settings';
 
 const GRAPH = 'https://graph.facebook.com/v21.0';
 
-export type MetaEventName = 'PageView' | 'ViewContent' | 'InitiateCheckout';
+export type MetaEventName = 'PageView' | 'ViewContent' | 'AddToCart';
 
 export type MetaContext = {
   eventId?: string;
@@ -19,6 +19,16 @@ export type MetaContext = {
   fbp?: string;
   fbc?: string;
   externalId?: string;
+};
+
+/** The product, identical in the Pixel (components/Analytics.tsx) and here. */
+const BOOK = {
+  content_name: 'Princípios Gerais da Traumatologia',
+  content_type: 'product',
+  content_category: 'Livro',
+  content_ids: ['principios-gerais-da-traumatologia'],
+  contents: [{ id: 'principios-gerais-da-traumatologia', quantity: 1 }],
+  currency: 'BRL',
 };
 
 const sha256 = (v: string) => createHash('sha256').update(v.trim().toLowerCase()).digest('hex');
@@ -37,9 +47,7 @@ function payload(name: MetaEventName, ctx: MetaContext) {
     ...(ctx.eventId ? { event_id: ctx.eventId } : {}),
     ...(ctx.url ? { event_source_url: ctx.url } : {}),
     user_data,
-    ...(name === 'InitiateCheckout' || name === 'ViewContent'
-      ? { custom_data: { content_name: 'Princípios Gerais da Traumatologia', content_type: 'product', content_category: 'Livro' } }
-      : {}),
+    ...(name === 'AddToCart' || name === 'ViewContent' ? { custom_data: BOOK } : {}),
   };
 }
 

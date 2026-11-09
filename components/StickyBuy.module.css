@@ -96,3 +96,10 @@
 @media print {
   .bar { display: none; }
 }
+
+/* Steps aside while the cookie notice is on screen. */
+:global(html[data-cookies-open]) .bar[data-shown] {
+  transform: translate3d(0, calc(100% + 1.5rem), 0);
+  opacity: 0;
+  pointer-events: none;
+}

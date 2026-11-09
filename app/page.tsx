@@ -14,6 +14,7 @@ import { PageBehaviors } from '@/components/PageBehaviors';
 import { Analytics } from '@/components/Analytics';
 import { StickyBuy } from '@/components/StickyBuy';
 import { MetaPixel } from '@/components/MetaPixel';
+import { CookieConsent } from '@/components/CookieConsent';
 import { getTracking } from '@/lib/settings';
 import { site } from '@/content/book';
 import { authorsOf, fill, totalsOf } from '@/content/derive';
@@ -73,13 +74,14 @@ export default async function Page() {
         <Printed content={c.printed} />
         <FinalCta content={c.closing} purchaseUrl={purchaseUrl} />
       </main>
-      <Footer content={c.footer} />
+      <Footer content={c.footer} cookiesLabel={c.cookies.manage} />
       {c.header.stickyEnabled !== 'nao' && (
         <StickyBuy label={c.header.stickyLabel || c.header.cta} note={c.header.stickyNote} purchaseUrl={purchaseUrl} cover={c.hero.imageMobile} />
       )}
       <PageBehaviors />
       {tracking.pixelId && <MetaPixel pixelId={tracking.pixelId} />}
       <Analytics />
+      <CookieConsent content={c.cookies} />
     </>
   );
 }

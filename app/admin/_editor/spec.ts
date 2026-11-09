@@ -236,6 +236,7 @@ export const sections: Section[] = [
     description: 'Seção do editor da obra.',
     fields: [
       t('kicker', 'Rótulo da seção'),
+      { kind: 'image', key: 'photo', label: 'Foto do editor', hint: 'Retrato vertical (ideal 1200 × 1500 px). Sem foto, a seção mostra só o nome.' },
       t('honorific', 'Título (Prof. Dr.)'),
       t('nameLine1', 'Nome — linha 1'),
       t('nameLine2', 'Nome — linha 2'),
@@ -293,6 +294,17 @@ export const sections: Section[] = [
       t('secondaryCta', 'Link secundário'),
       t('soon', 'Aviso quando não há link de compra'),
       { kind: 'image', key: 'image', label: 'Imagem do livro' },
+    ],
+  },
+  {
+    id: 'cookies',
+    title: 'Aviso de cookies',
+    description: 'Aviso exibido na primeira visita. O Pixel da Meta só é ativado quando a pessoa aceita.',
+    fields: [
+      t('text', 'Texto do aviso', { long: true }),
+      t('accept', 'Botão "aceitar"'),
+      t('reject', 'Botão "só essenciais"'),
+      t('manage', 'Link no rodapé para mudar a escolha'),
     ],
   },
   {

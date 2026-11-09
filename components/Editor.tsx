@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import type { SiteContent } from '@/content/schema';
 import { Orbits } from './Orbits';
 import s from './Editor.module.css';
@@ -6,10 +7,24 @@ export function Editor({ content: c }: { content: SiteContent['editor'] }) {
   return (
     <section id="editor" className={`tone-bridge bridge-from-paper ${s.section}`} data-tone="dark" aria-labelledby="editor-title">
       <Orbits className={s.orbits} />
-      <div className={`container ${s.layout}`}>
+      <div className={`container ${s.layout}`} data-photo={c.photo.src ? '' : undefined}>
         <p className={`kicker ${s.kicker}`} data-reveal>
           {c.kicker}
         </p>
+
+        {c.photo.src && (
+          <figure className={s.portrait} data-reveal>
+            <Image
+              src={c.photo.src}
+              width={c.photo.width}
+              height={c.photo.height}
+              alt={c.photo.alt || [c.honorific, c.nameLine1, c.nameLine2].filter(Boolean).join(' ')}
+              sizes="(max-width: 1023px) 80vw, 34vw"
+              quality={85}
+              className={s.photo}
+            />
+          </figure>
+        )}
 
         <h2 id="editor-title" className={s.name} data-reveal="lines">
           {c.honorific && (

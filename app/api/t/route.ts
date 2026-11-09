@@ -2,6 +2,7 @@ import { after } from 'next/server';
 import { analyticsReady, EVENT_TYPES, record, type EventType } from '@/lib/analytics';
 import { requestContext } from '@/lib/track-request';
 import { metaContextFrom, sendMetaEvent, type MetaEventName } from '@/lib/meta';
+import { consentFrom } from '@/lib/consent';
 
 /**
  * Collects page views, sections reached and clicks sent by components/Analytics.tsx
@@ -50,7 +51,7 @@ export async function POST(request: Request) {
     if (e.type === 'view') meta.push({ name: 'PageView', eventId });
     if (e.type === 'section' && e.name === 'conteudo') meta.push({ name: 'ViewContent', eventId });
   }
-  if (meta.length) {
+  if (meta.length && consentFrom(request.headers.get('cookie')) === 'all') {
     const page = str(body.url);
     const metaCtx = metaContextFrom(request, { url: page, externalId: str(body.visitor) ?? ctx.visitor });
     after(async () => {

@@ -69,10 +69,16 @@ horários de pico. Nessa aba também se troca o **link do botão de compra**.
 
 Meta Pixel + API de Conversões. O ID do Pixel e o token ficam no D1 (tabela `settings`), nunca no
 Blob público; o token só é lido no servidor e não volta para o navegador. Eventos: `PageView` (toda
-visita), `ViewContent` (chegou ao sumário) e `InitiateCheckout` (clique em comprar), cada um enviado
+visita), `ViewContent` (chegou ao sumário) e `AddToCart` (clique em comprar), cada um enviado
 pelo Pixel e pela API com o mesmo `event_id` para a Meta deduplicar (`lib/meta.ts`, `lib/settings.ts`).
 
 ## Botão de compra flutuante
 
 `components/StickyBuy.tsx`: aparece depois da abertura e some ao chegar na seção final. Barra inferior
 no celular, cartão no canto no computador. Texto e liga/desliga em Conteúdo → Menu.
+
+## Aviso de cookies (LGPD)
+
+`components/CookieConsent.tsx`: aparece na primeira visita. O Pixel e a API de Conversões da Meta só
+funcionam com o cookie `pgt_consent=all` ("Aceitar"); a contagem própria do painel é anônima e segue
+sempre. A escolha vale 6 meses e pode ser mudada pelo link no rodapé. Textos em Conteúdo → Aviso de cookies.

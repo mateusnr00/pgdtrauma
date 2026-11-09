@@ -158,6 +158,7 @@ export const defaultContent: SiteContent = {
   editor: {
     kicker: 'Editor da obra',
     honorific: 'Prof. Dr.',
+    photo: { src: '', width: 1200, height: 1500, alt: 'Prof. Dr. Marcos Rassi Fernandes' },
     nameLine1: 'Marcos Rassi',
     nameLine2: 'Fernandes',
     credentials: [
@@ -213,6 +214,12 @@ export const defaultContent: SiteContent = {
     secondaryCta: 'Rever o sumário',
     soon: 'Canal de aquisição em breve.',
     image: media(front, 'Capa de Princípios Gerais da Traumatologia, primeira edição.'),
+  },
+  cookies: {
+    text: 'Usamos cookies para medir o alcance do site e das nossas campanhas no Facebook e no Instagram. Você pode aceitar ou manter só os essenciais.',
+    accept: 'Aceitar',
+    reject: 'Só essenciais',
+    manage: 'Preferências de cookies',
   },
   footer: {
     title: 'Princípios Gerais da Traumatologia',

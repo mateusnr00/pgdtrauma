@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { BASE_PATH } from '@/lib/base-path';
+import { consentFrom } from '@/lib/consent';
 
 /**
  * Anonymous, first-party analytics: one page view per visit, each section the visitor actually
@@ -36,12 +37,23 @@ function sessionId() {
 }
 
 type Fbq = (...args: unknown[]) => void;
-const BOOK = { content_name: 'Princípios Gerais da Traumatologia', content_type: 'product', content_category: 'Livro' };
+const BOOK = {
+  content_name: 'Princípios Gerais da Traumatologia',
+  content_type: 'product',
+  content_category: 'Livro',
+  content_ids: ['principios-gerais-da-traumatologia'],
+  contents: [{ id: 'principios-gerais-da-traumatologia', quantity: 1 }],
+  currency: 'BRL',
+};
 
 /** Fires a Meta Pixel event when the Pixel is on the page; the same id goes to the server (Conversions API). */
 function pixel(event: string, eventId: string, data: Record<string, unknown> = {}) {
-  const fbq = (window as unknown as { fbq?: Fbq }).fbq;
-  if (typeof fbq === 'function') fbq('track', event, data, { eventID: eventId });
+  if (consentFrom(document.cookie) !== 'all') return;
+  const w = window as unknown as { fbq?: Fbq; __pgtPixelQueue?: unknown[][] };
+  const args = ['track', event, data, { eventID: eventId }];
+  // The Pixel script may still be loading: components/MetaPixel.tsx flushes this queue after init.
+  if (typeof w.fbq === 'function') w.fbq(...args);
+  else (w.__pgtPixelQueue ??= []).push(args);
 }
 
 export function Analytics() {
@@ -97,7 +109,7 @@ export function Analytics() {
       if (href.includes('/comprar')) {
         // Counted by the server; the Pixel event and the server's Conversions API event share this id.
         const eid = rid();
-        pixel('InitiateCheckout', eid, BOOK);
+        pixel('AddToCart', eid, BOOK);
         const target = new URL(href, location.href);
         target.searchParams.set('eid', eid);
         el.setAttribute('href', target.pathname + target.search);

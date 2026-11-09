@@ -5,6 +5,7 @@ import { BASE_PATH } from '@/lib/base-path';
 import { getContent } from '@/lib/content-store';
 import { requestContext } from '@/lib/track-request';
 import { metaContextFrom, sendMetaEvent } from '@/lib/meta';
+import { consentFrom } from '@/lib/consent';
 
 /**
  * Every "Adquirir livro" button points here (?de=topo|menu|final|…). The click is counted and the
@@ -24,7 +25,10 @@ export async function GET(request: Request) {
     const eventId = (url.searchParams.get('eid') ?? '').replace(/[^a-z0-9-]/gi, '').slice(0, 64);
     const page = request.headers.get('referer') ?? undefined;
     const metaCtx = metaContextFrom(request, { eventId: eventId || undefined, url: page, externalId: ctx.visitor });
-    after(() => sendMetaEvent('InitiateCheckout', metaCtx).catch((error) => console.error('meta:', error)));
+    // Meta only with the visitor's consent (LGPD); the anonymous click count above needs none.
+    if (consentFrom(request.headers.get('cookie')) === 'all') {
+      after(() => sendMetaEvent('AddToCart', metaCtx).catch((error) => console.error('meta:', error)));
+    }
     after(() =>
       record({
         type: 'purchase',

@@ -107,6 +107,8 @@ export type SiteContent = {
   editor: {
     kicker: string;
     honorific: string;
+    /** Portrait of the editor. Empty src: the section shows the name only. */
+    photo: Media;
     nameLine1: string;
     nameLine2: string;
     credentials: { term: string; detail: string }[];
@@ -142,6 +144,12 @@ export type SiteContent = {
     secondaryCta: string;
     soon: string;
     image: Media;
+  };
+  cookies: {
+    text: string;
+    accept: string;
+    reject: string;
+    manage: string;
   };
   footer: {
     title: string;

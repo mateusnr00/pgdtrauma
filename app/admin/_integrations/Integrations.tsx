@@ -183,7 +183,7 @@ export function Integrations() {
               <b>ViewContent</b> <span>quando a pessoa chega ao sumário do livro</span>
             </li>
             <li>
-              <b>InitiateCheckout</b> <span>clique em &ldquo;Adquirir livro&rdquo; (qualquer botão)</span>
+              <b>AddToCart</b> <span>adicionar ao carrinho: clique em &ldquo;Adquirir livro&rdquo; (qualquer botão)</span>
             </li>
           </ul>
           <p className={a.hint}>Cada evento sai pelo Pixel e pela API com o mesmo identificador, então a Meta não conta em dobro.</p>
