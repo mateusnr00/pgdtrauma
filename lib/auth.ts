@@ -5,14 +5,14 @@ import { redirect } from 'next/navigation';
 import { ADMIN_HOST } from '@/lib/base-path';
 
 /**
- * Single-owner admin login: one password (ADMIN_PASSWORD) and a signed, httpOnly session
+ * Single-owner admin login: e-mail (ADMIN_EMAIL) and password (ADMIN_PASSWORD), and a signed, httpOnly session
  * cookie (HMAC with ADMIN_SECRET). Every admin page, server action and upload checks it.
  */
 
 const COOKIE = 'pgt_admin';
 const TTL_SECONDS = 60 * 60 * 12;
 
-export const adminConfigured = () => Boolean(process.env.ADMIN_PASSWORD && process.env.ADMIN_SECRET);
+export const adminConfigured = () => Boolean(process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD && process.env.ADMIN_SECRET);
 
 const sign = (value: string) => createHmac('sha256', process.env.ADMIN_SECRET ?? '').update(value).digest('base64url');
 
@@ -26,6 +26,11 @@ export function passwordMatches(input: string) {
   const expected = process.env.ADMIN_PASSWORD ?? '';
   // Compare digests so length differences don't leak through timing.
   return adminConfigured() && safeEqual(sign(`pw:${input}`), sign(`pw:${expected}`));
+}
+
+export function emailMatches(input: string) {
+  const expected = (process.env.ADMIN_EMAIL ?? '').trim().toLowerCase();
+  return adminConfigured() && safeEqual(sign(`em:${input.trim().toLowerCase()}`), sign(`em:${expected}`));
 }
 
 export async function startSession() {

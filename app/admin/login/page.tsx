@@ -15,7 +15,7 @@ export default async function LoginPage() {
         {adminConfigured() ? (
           <LoginForm />
         ) : (
-          <p className={s.error}>O acesso ainda não foi configurado (ADMIN_PASSWORD e ADMIN_SECRET).</p>
+          <p className={s.error}>O acesso ainda não foi configurado (ADMIN_EMAIL, ADMIN_PASSWORD e ADMIN_SECRET).</p>
         )}
       </div>
     </main>

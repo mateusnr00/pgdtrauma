@@ -27,6 +27,7 @@ conteúdo de lançamento.
 
 | Variável | Uso |
 | --- | --- |
+| `ADMIN_EMAIL` | E-mail de login do painel. |
 | `ADMIN_PASSWORD` | Senha do painel. |
 | `ADMIN_SECRET` | Chave que assina a sessão (string aleatória longa). Trocar desconecta todos. |
 | `BLOB_READ_WRITE_TOKEN` | Criada automaticamente ao conectar o Blob store ao projeto. |

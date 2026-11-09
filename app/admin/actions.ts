@@ -1,7 +1,7 @@
 'use server';
 
 import { revalidatePath, updateTag } from 'next/cache';
-import { endSession, goToAdmin, passwordMatches, requireAdmin, startSession } from '@/lib/auth';
+import { emailMatches, endSession, goToAdmin, passwordMatches, requireAdmin, startSession } from '@/lib/auth';
 import { asContent, CONTENT_TAG, listVersions, readVersion, writeContent } from '@/lib/content-store';
 import { defaultContent } from '@/content/defaults';
 import type { SiteContent } from '@/content/schema';
@@ -10,11 +10,15 @@ import { analyticsReady, report, resetAnalytics, type Report } from '@/lib/analy
 export type LoginState = { error?: string };
 
 export async function login(_prev: LoginState, formData: FormData): Promise<LoginState> {
+  const email = String(formData.get('email') ?? '');
   const password = String(formData.get('password') ?? '');
-  if (!passwordMatches(password)) {
+  // Both are checked every time, so the answer never reveals which one was wrong.
+  const emailOk = emailMatches(email);
+  const passwordOk = passwordMatches(password);
+  if (!emailOk || !passwordOk) {
     // Slow down guessing.
     await new Promise((r) => setTimeout(r, 800));
-    return { error: 'Senha incorreta.' };
+    return { error: 'E-mail ou senha incorretos.' };
   }
   await startSession();
   return goToAdmin('panel');
