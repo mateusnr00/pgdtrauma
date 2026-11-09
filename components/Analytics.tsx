@@ -35,6 +35,15 @@ function sessionId() {
   }
 }
 
+type Fbq = (...args: unknown[]) => void;
+const BOOK = { content_name: 'Princípios Gerais da Traumatologia', content_type: 'product', content_category: 'Livro' };
+
+/** Fires a Meta Pixel event when the Pixel is on the page; the same id goes to the server (Conversions API). */
+function pixel(event: string, eventId: string, data: Record<string, unknown> = {}) {
+  const fbq = (window as unknown as { fbq?: Fbq }).fbq;
+  if (typeof fbq === 'function') fbq('track', event, data, { eventID: eventId });
+}
+
 export function Analytics() {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -47,16 +56,19 @@ export function Analytics() {
       source: params.get('utm_source') ?? params.get('ref') ?? '',
       medium: params.get('utm_medium') ?? '',
       campaign: params.get('utm_campaign') ?? '',
+      url: location.href,
     };
 
-    const send = (events: { type: string; name?: string }[]) => {
+    const send = (events: { type: string; name?: string; eid?: string }[]) => {
       const body = JSON.stringify({ ...base, events });
       if (!navigator.sendBeacon?.(ENDPOINT, body)) {
         fetch(ENDPOINT, { method: 'POST', body, keepalive: true }).catch(() => {});
       }
     };
 
-    send([{ type: 'view' }]);
+    const viewId = rid();
+    pixel('PageView', viewId);
+    send([{ type: 'view', eid: viewId }]);
 
     // Sections: counted once, when at least a third of the section (or of the screen) is visible.
     const seen = new Set<string>();
@@ -67,7 +79,11 @@ export function Analytics() {
           if (!e.isIntersecting || seen.has(id)) continue;
           seen.add(id);
           io.unobserve(e.target);
-          send([{ type: 'section', name: id }]);
+          if (id === 'conteudo') {
+            const eid = rid();
+            pixel('ViewContent', eid, BOOK);
+            send([{ type: 'section', name: id, eid }]);
+          } else send([{ type: 'section', name: id }]);
         }
       },
       { threshold: [0, 0.35], rootMargin: '0px 0px -35% 0px' },
@@ -78,7 +94,15 @@ export function Analytics() {
       const el = (event.target as Element | null)?.closest<HTMLElement>('[data-track], a[href]');
       if (!el) return;
       const href = el.getAttribute('href') ?? '';
-      if (href.includes('/comprar')) return; // counted by the server
+      if (href.includes('/comprar')) {
+        // Counted by the server; the Pixel event and the server's Conversions API event share this id.
+        const eid = rid();
+        pixel('InitiateCheckout', eid, BOOK);
+        const target = new URL(href, location.href);
+        target.searchParams.set('eid', eid);
+        el.setAttribute('href', target.pathname + target.search);
+        return;
+      }
       const name = el.dataset.track || (href.startsWith('#') ? `link:${href}` : /^https?:/.test(href) ? `saida:${new URL(href).hostname}` : '');
       if (name) send([{ type: 'click', name }]);
     };

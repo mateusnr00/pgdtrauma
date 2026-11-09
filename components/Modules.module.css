@@ -18,7 +18,7 @@
 .title {
   max-width: 13ch;
   font-size: var(--t-h2);
-  line-height: 1.04;
+  line-height: 1.1;
   letter-spacing: var(--tracking-heading);
 }
 

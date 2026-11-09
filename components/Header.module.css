@@ -12,7 +12,7 @@
   position: absolute;
   inset: 0;
   /* Near-opaque instead of backdrop-filter: a live blur re-renders everything that scrolls under it. */
-  background: color-mix(in srgb, var(--bg) 93%, transparent);
+  background: color-mix(in srgb, var(--bg) 97%, transparent);
   border-bottom: 1px solid var(--line);
   opacity: 0;
   transition:

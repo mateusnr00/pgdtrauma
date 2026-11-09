@@ -4,6 +4,7 @@ import { record } from '@/lib/analytics';
 import { BASE_PATH } from '@/lib/base-path';
 import { getContent } from '@/lib/content-store';
 import { requestContext } from '@/lib/track-request';
+import { metaContextFrom, sendMetaEvent } from '@/lib/meta';
 
 /**
  * Every "Adquirir livro" button points here (?de=topo|menu|final|…). The click is counted and the
@@ -20,6 +21,10 @@ export async function GET(request: Request) {
 
   const ctx = await requestContext();
   if (ctx) {
+    const eventId = (url.searchParams.get('eid') ?? '').replace(/[^a-z0-9-]/gi, '').slice(0, 64);
+    const page = request.headers.get('referer') ?? undefined;
+    const metaCtx = metaContextFrom(request, { eventId: eventId || undefined, url: page, externalId: ctx.visitor });
+    after(() => sendMetaEvent('InitiateCheckout', metaCtx).catch((error) => console.error('meta:', error)));
     after(() =>
       record({
         type: 'purchase',

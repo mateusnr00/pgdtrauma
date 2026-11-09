@@ -12,6 +12,9 @@ import { FinalCta } from '@/components/FinalCta';
 import { Footer } from '@/components/Footer';
 import { PageBehaviors } from '@/components/PageBehaviors';
 import { Analytics } from '@/components/Analytics';
+import { StickyBuy } from '@/components/StickyBuy';
+import { MetaPixel } from '@/components/MetaPixel';
+import { getTracking } from '@/lib/settings';
 import { site } from '@/content/book';
 import { authorsOf, fill, totalsOf } from '@/content/derive';
 import { getContent } from '@/lib/content-store';
@@ -23,7 +26,7 @@ import { getContent } from '@/lib/content-store';
  * All content comes from the editable document managed in /admin.
  */
 export default async function Page() {
-  const c = await getContent();
+  const [c, tracking] = await Promise.all([getContent(), getTracking()]);
   const totals = totalsOf(c);
   const authors = authorsOf(c.modules.list);
   const tokens = { capitulos: totals.chapters, modulos: totals.modules, autores: totals.authors };
@@ -71,7 +74,11 @@ export default async function Page() {
         <FinalCta content={c.closing} purchaseUrl={purchaseUrl} />
       </main>
       <Footer content={c.footer} />
+      {c.header.stickyEnabled !== 'nao' && (
+        <StickyBuy label={c.header.stickyLabel || c.header.cta} note={c.header.stickyNote} purchaseUrl={purchaseUrl} cover={c.hero.imageMobile} />
+      )}
       <PageBehaviors />
+      {tracking.pixelId && <MetaPixel pixelId={tracking.pixelId} />}
       <Analytics />
     </>
   );

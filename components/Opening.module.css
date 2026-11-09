@@ -4,7 +4,7 @@
 
 .title {
   font-size: var(--t-display);
-  line-height: 1.02;
+  line-height: 1.08;
   letter-spacing: var(--tracking-display);
 }
 

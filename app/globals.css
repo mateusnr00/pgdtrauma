@@ -43,11 +43,11 @@
   --t-small: 0.9375rem;
   --t-micro: 0.75rem;
 
-  --lh-tight: 0.96;
-  --lh-snug: 1.12;
+  --lh-tight: 1.04;
+  --lh-snug: 1.18;
   --lh-body: 1.6;
-  --tracking-display: -0.042em;
-  --tracking-heading: -0.028em;
+  --tracking-display: -0.022em;
+  --tracking-heading: -0.015em;
   --tracking-caps: 0.16em;
 
   /* Space (4px base) */
@@ -321,11 +321,12 @@ p { text-wrap: pretty; }
 .js [data-reveal].is-in { opacity: 1; transform: none; }
 
 /* Line-by-line mask reveal for headlines. */
+/* Room above (accents: Í, Ç) and below (descenders: g, p, q) so the mask never crops a letter. */
 .mask-line {
   display: block;
   overflow: hidden;
-  padding-bottom: 0.1em;
-  margin-bottom: -0.1em;
+  padding-block: 0.14em 0.24em;
+  margin-block: -0.14em -0.24em;
 }
 .mask-line > span { display: block; }
 .js [data-reveal='lines'] { opacity: 1; transform: none; }

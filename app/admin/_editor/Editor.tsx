@@ -5,10 +5,12 @@ import type { SiteContent } from '@/content/schema';
 import { site } from '@/content/book';
 import { getDefaults, getVersions, loadVersion, logout, saveContent } from '../actions';
 import { Dashboard } from '../_dashboard/Dashboard';
+import { Integrations } from '../_integrations/Integrations';
 import { Fields, type Path } from './Fields';
 import { sections } from './spec';
 import s from '../admin.module.css';
 
+type Tab = 'metricas' | 'conteudo' | 'integracoes';
 type Version = { url: string; savedAt: string; size: number };
 
 function setIn(obj: unknown, path: Path, value: unknown): unknown {
@@ -34,9 +36,9 @@ export function Editor({ initial, storeReady }: { initial: SiteContent; storeRea
   const [saving, startSaving] = useTransition();
   const [historyOpen, setHistoryOpen] = useState(false);
   const [versions, setVersions] = useState<Version[] | null>(null);
-  const [tab, setTab] = useState<'metricas' | 'conteudo'>('metricas');
+  const [tab, setTab] = useState<Tab>('metricas');
 
-  const switchTab = (next: 'metricas' | 'conteudo') => {
+  const switchTab = (next: Tab) => {
     setTab(next);
     window.scrollTo({ top: 0 });
   };
@@ -139,6 +141,9 @@ export function Editor({ initial, storeReady }: { initial: SiteContent; storeRea
             Conteúdo do site
             {dirty && <span className={s.dot} aria-label="com alterações não publicadas" />}
           </button>
+          <button type="button" aria-current={tab === 'integracoes' ? 'page' : undefined} onClick={() => switchTab('integracoes')}>
+            Integrações
+          </button>
         </nav>
         <div className={s.topActions}>
           {tab === 'conteudo' && (
@@ -186,7 +191,11 @@ export function Editor({ initial, storeReady }: { initial: SiteContent; storeRea
       )}
       {status?.kind === 'ok' && dirty && <p className={s.banner}>{status.text}</p>}
 
-      {tab === 'metricas' ? (
+      {tab === 'integracoes' ? (
+        <div className={s.wideBody}>
+          <Integrations />
+        </div>
+      ) : tab === 'metricas' ? (
         <div className={s.wideBody}>
           <Dashboard
             purchaseUrl={content.meta.purchaseUrl}

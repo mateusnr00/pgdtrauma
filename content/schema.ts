@@ -41,6 +41,10 @@ export type SiteContent = {
     brandStrong: string;
     nav: { label: string; href: string }[];
     cta: string;
+    /** Floating purchase bar that follows the scroll. */
+    stickyEnabled: string;
+    stickyLabel: string;
+    stickyNote: string;
     menuOpen: string;
     menuClose: string;
     skipLink: string;

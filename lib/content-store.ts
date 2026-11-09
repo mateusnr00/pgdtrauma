@@ -69,8 +69,10 @@ async function readContent(): Promise<SiteContent> {
 
 /** Cached for the public page; invalidated by tag whenever the admin saves. */
 // Bump CACHE_VERSION whenever the document shape or asset paths change: the data cache outlives deployments.
-const CACHE_VERSION = 'v2';
-export const getContent = unstable_cache(readContent, ['site-content', CACHE_VERSION, BASE_PATH], { tags: [CONTENT_TAG] });
+const CACHE_VERSION = 'v3';
+const cachedContent = unstable_cache(readContent, ['site-content', CACHE_VERSION, BASE_PATH], { tags: [CONTENT_TAG] });
+// Normalised again on the way out, so fields added after a value was cached still get their defaults.
+export const getContent = async () => asContent(await cachedContent());
 
 /** Uncached read for the admin, so the editor always opens the latest saved version. */
 export const getContentFresh = readContent;

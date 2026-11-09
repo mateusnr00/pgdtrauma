@@ -11,7 +11,7 @@
 .title {
   max-width: 18ch;
   font-size: var(--t-h2);
-  line-height: 1.04;
+  line-height: 1.1;
   letter-spacing: var(--tracking-heading);
 }
 
@@ -33,8 +33,8 @@
 .bigNumber {
   font-size: clamp(9rem, 2rem + 34vw, 30rem);
   font-weight: 300;
-  line-height: 0.8;
-  letter-spacing: -0.07em;
+  line-height: 0.86;
+  letter-spacing: -0.045em;
   font-variant-numeric: lining-nums;
   margin-left: -0.06em;
 }
@@ -82,8 +82,8 @@
 .number {
   font-size: clamp(3rem, 1.5rem + 6vw, 7.5rem);
   font-weight: 300;
-  line-height: 0.9;
-  letter-spacing: -0.05em;
+  line-height: 0.96;
+  letter-spacing: -0.03em;
 }
 
 .word {

@@ -25,7 +25,7 @@
 .name {
   font-size: var(--t-display);
   font-weight: 600;
-  line-height: 0.98;
+  line-height: 1.06;
   letter-spacing: var(--tracking-display);
 }
 

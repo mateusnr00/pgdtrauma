@@ -1,4 +1,6 @@
 import 'server-only';
+import { d1, d1Ready, type D1Param as Param, type D1Row as Row } from '@/lib/d1';
+
 
 /**
  * First-party, cookie-light analytics stored in Cloudflare D1 (SQLite), reached through the
@@ -30,34 +32,8 @@ export type TrackEvent = {
 const TZ_OFFSET = -3 * 3600;
 const LOCAL = `(at / 1000 + ${TZ_OFFSET})`;
 
-const env = () => ({
-  account: process.env.CLOUDFLARE_ACCOUNT_ID ?? '',
-  database: process.env.CLOUDFLARE_D1_DATABASE_ID ?? '',
-  token: process.env.CLOUDFLARE_D1_TOKEN ?? '',
-});
-
-export const analyticsReady = () => {
-  const e = env();
-  return Boolean(e.account && e.database && e.token);
-};
-
-type Row = Record<string, unknown>;
-type Param = string | number | null;
-
-async function query(sql: string, params: Param[] = []): Promise<Row[]> {
-  const { account, database, token } = env();
-  const res = await fetch(`https://api.cloudflare.com/client/v4/accounts/${account}/d1/database/${database}/query`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ sql, params }),
-    cache: 'no-store',
-  });
-  const body = (await res.json().catch(() => null)) as { success?: boolean; errors?: { message: string }[]; result?: { results?: Row[] }[] } | null;
-  if (!res.ok || !body?.success) {
-    throw new Error(`D1: ${body?.errors?.map((e) => e.message).join('; ') || res.status}`);
-  }
-  return body.result?.[0]?.results ?? [];
-}
+export const analyticsReady = d1Ready;
+const query = d1;
 
 /** Creates the table on first use, so the only setup is the three environment variables. */
 const g = globalThis as unknown as { __pgtSchema?: Promise<unknown> };

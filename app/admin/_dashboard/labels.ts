@@ -20,6 +20,7 @@ export const POSITION_LABELS: Record<string, string> = {
   topo: 'Botão do topo (menu fixo)',
   menu: 'Menu do celular',
   final: 'Seção final',
+  flutuante: 'Botão flutuante (acompanha a rolagem)',
   outro: 'Link direto / outro',
 };
 

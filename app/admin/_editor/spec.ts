@@ -74,6 +74,17 @@ export const sections: Section[] = [
         newItem: () => ({ label: 'Novo link', href: '#obra' }),
       },
       t('cta', 'Botão de compra'),
+      {
+        kind: 'select',
+        key: 'stickyEnabled',
+        label: 'Botão de compra flutuante (acompanha a rolagem)',
+        options: [
+          { value: 'sim', label: 'Mostrar' },
+          { value: 'nao', label: 'Esconder' },
+        ],
+      },
+      t('stickyLabel', 'Botão flutuante — texto do botão'),
+      t('stickyNote', 'Botão flutuante — frase ao lado', { hint: 'Aparece no computador e no celular, ao lado do botão. Pode deixar vazio.' }),
       t('menuOpen', 'Leitor de tela: abrir menu'),
       t('menuClose', 'Leitor de tela: fechar menu'),
       t('skipLink', 'Atalho de acessibilidade ("pular para o conteúdo")'),

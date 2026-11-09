@@ -64,3 +64,15 @@ horários de pico. Nessa aba também se troca o **link do botão de compra**.
 - Armazenamento: Cloudflare D1 (banco `pgdtrauma-metricas`), acessado pela API da Cloudflare. A
   tabela `events` é criada sozinha no primeiro uso.
 - Anônimo: id aleatório em cookie próprio, sem IP. Robôs e o admin logado não contam.
+
+## Integrações (aba "Integrações" do painel)
+
+Meta Pixel + API de Conversões. O ID do Pixel e o token ficam no D1 (tabela `settings`), nunca no
+Blob público; o token só é lido no servidor e não volta para o navegador. Eventos: `PageView` (toda
+visita), `ViewContent` (chegou ao sumário) e `InitiateCheckout` (clique em comprar), cada um enviado
+pelo Pixel e pela API com o mesmo `event_id` para a Meta deduplicar (`lib/meta.ts`, `lib/settings.ts`).
+
+## Botão de compra flutuante
+
+`components/StickyBuy.tsx`: aparece depois da abertura e some ao chegar na seção final. Barra inferior
+no celular, cartão no canto no computador. Texto e liga/desliga em Conteúdo → Menu.

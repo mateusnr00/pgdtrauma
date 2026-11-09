@@ -106,8 +106,9 @@
 .line {
   display: block;
   overflow: hidden;
-  padding-bottom: 0.08em;
-  margin-bottom: -0.08em;
+  /* Room for accents (Í) above and descenders (g) below: the mask must never crop a letter. */
+  padding-block: 0.14em 0.24em;
+  margin-block: -0.14em -0.24em;
 }
 .line > span {
   display: block;

@@ -1,6 +1,7 @@
 import { after } from 'next/server';
 import { analyticsReady, EVENT_TYPES, record, type EventType } from '@/lib/analytics';
 import { requestContext } from '@/lib/track-request';
+import { metaContextFrom, sendMetaEvent, type MetaEventName } from '@/lib/meta';
 
 /**
  * Collects page views, sections reached and clicks sent by components/Analytics.tsx
@@ -9,7 +10,6 @@ import { requestContext } from '@/lib/track-request';
 const ALLOWED: EventType[] = EVENT_TYPES.filter((t) => t !== 'purchase');
 
 export async function POST(request: Request) {
-  if (!analyticsReady()) return new Response(null, { status: 204 });
   const text = await request.text();
   if (text.length > 4000) return new Response(null, { status: 413 });
 
@@ -40,6 +40,22 @@ export async function POST(request: Request) {
       device: ctx.device,
       country: ctx.country,
     }));
-  if (valid.length) after(() => record(valid).catch((error) => console.error('analytics:', error)));
+  if (valid.length && analyticsReady()) after(() => record(valid).catch((error) => console.error('analytics:', error)));
+
+  // Server-side twin of the Pixel events (Meta Conversions API), deduplicated by event id.
+  const meta: { name: MetaEventName; eventId: string }[] = [];
+  for (const e of events) {
+    const eventId = str(e.eid);
+    if (!eventId) continue;
+    if (e.type === 'view') meta.push({ name: 'PageView', eventId });
+    if (e.type === 'section' && e.name === 'conteudo') meta.push({ name: 'ViewContent', eventId });
+  }
+  if (meta.length) {
+    const page = str(body.url);
+    const metaCtx = metaContextFrom(request, { url: page, externalId: str(body.visitor) ?? ctx.visitor });
+    after(async () => {
+      for (const m of meta) await sendMetaEvent(m.name, { ...metaCtx, eventId: m.eventId }).catch((error) => console.error('meta:', error));
+    });
+  }
   return new Response(null, { status: 204 });
 }

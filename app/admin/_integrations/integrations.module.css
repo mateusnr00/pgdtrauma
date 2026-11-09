@@ -1,0 +1,74 @@
+.card {
+  display: grid;
+  gap: 1.5rem;
+  padding: clamp(1.25rem, 3vw, 1.75rem);
+  border: 1px solid var(--a-line);
+  border-radius: 18px;
+  background: var(--a-surface);
+}
+
+.head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.25rem 1rem;
+  align-items: start;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--a-line);
+}
+.logo {
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 12px;
+  background: #eef3ef;
+  color: var(--a-green-2);
+}
+.title { font-size: 1.125rem; letter-spacing: -0.01em; }
+.sub { margin-top: 0.2rem; max-width: 40rem; font-size: 0.875rem; color: var(--a-ink-3); }
+.status { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.75rem; }
+@media (min-width: 900px) {
+  .head { grid-template-columns: auto minmax(0, 1fr) auto; }
+  .status { grid-column: auto; margin-top: 0; justify-content: flex-end; }
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.65rem;
+  border-radius: 999px;
+  background: #efeee8;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--a-ink-2);
+  white-space: nowrap;
+}
+.chip i { width: 7px; height: 7px; border-radius: 50%; background: #a3aaa6; }
+.chip[data-on] { background: #e5f3ea; color: #17643c; }
+.chip[data-on] i { background: #1f9d5c; }
+
+.form { display: grid; gap: 1.25rem; max-width: 46rem; }
+.field { display: grid; gap: 0.375rem; }
+.field input[aria-invalid] { border-color: var(--a-danger); }
+.tokenRow { display: flex; gap: 0.5rem; }
+.tokenRow input { min-width: 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.8125rem; }
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+
+.events {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem 1.15rem;
+  border-radius: 12px;
+  background: #faf9f6;
+  border: 1px solid var(--a-line);
+}
+.events ul { display: grid; gap: 0.5rem; list-style: none; }
+.events li { display: flex; flex-wrap: wrap; gap: 0.25rem 0.75rem; font-size: 0.875rem; }
+.events li b {
+  min-width: 9.5rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+.events li span { color: var(--a-ink-2); }
