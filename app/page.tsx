@@ -11,6 +11,7 @@ import { Printed } from '@/components/Printed';
 import { FinalCta } from '@/components/FinalCta';
 import { Footer } from '@/components/Footer';
 import { PageBehaviors } from '@/components/PageBehaviors';
+import { Analytics } from '@/components/Analytics';
 import { site } from '@/content/book';
 import { authorsOf, fill, totalsOf } from '@/content/derive';
 import { getContent } from '@/lib/content-store';
@@ -71,6 +72,7 @@ export default async function Page() {
       </main>
       <Footer content={c.footer} />
       <PageBehaviors />
+      <Analytics />
     </>
   );
 }

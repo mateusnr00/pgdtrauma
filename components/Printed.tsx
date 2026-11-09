@@ -75,7 +75,7 @@ export function Printed({ content: c }: { content: SiteContent['printed'] }) {
               {c.video.webm && <source src={c.video.webm} type="video/webm" />}
               {c.video.mp4 && <source src={c.video.mp4} type="video/mp4" />}
             </video>
-            <button type="button" className={s.control} onClick={toggle} data-playing={playing || undefined}>
+            <button type="button" className={s.control} onClick={toggle} data-playing={playing || undefined} data-track={playing ? "video:pausar" : "video:assistir"}>
               <span className="sr-only">{playing ? c.pause : c.play}</span>
               <span className={s.glyph} aria-hidden="true" />
             </button>

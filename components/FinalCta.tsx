@@ -3,6 +3,7 @@
 import { useCallback, useRef } from 'react';
 import Image from 'next/image';
 import type { SiteContent } from '@/content/schema';
+import { purchaseLink } from '@/lib/purchase';
 import { usePrefersReducedMotion, useScrollProgress } from '@/lib/motion';
 import s from './FinalCta.module.css';
 
@@ -39,7 +40,7 @@ export function FinalCta({ content: c, purchaseUrl }: { content: SiteContent['cl
           </p>
           <div className={s.actions} data-reveal style={{ '--delay': '220ms' } as React.CSSProperties}>
             {purchaseUrl ? (
-              <a href={purchaseUrl} className="btn" target="_blank" rel="noopener">
+              <a href={purchaseLink(purchaseUrl, 'final')} className="btn" target="_blank" rel="noopener">
                 {c.primaryCta} <span className="btn-arrow" aria-hidden="true">→</span>
               </a>
             ) : (

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { SiteContent } from '@/content/schema';
+import { purchaseLink } from '@/lib/purchase';
 import s from './Header.module.css';
 
 export function Header({ content, purchaseUrl }: { content: SiteContent['header']; purchaseUrl: string }) {
@@ -10,7 +11,6 @@ export function Header({ content, purchaseUrl }: { content: SiteContent['header'
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState<string | null>(null);
   const toggleRef = useRef<HTMLButtonElement>(null);
-  const purchaseHref = purchaseUrl || '#adquirir';
   const external = Boolean(purchaseUrl);
 
   useEffect(() => {
@@ -91,7 +91,7 @@ export function Header({ content, purchaseUrl }: { content: SiteContent['header'
         </nav>
 
         <a
-          href={purchaseHref}
+          href={purchaseLink(purchaseUrl, 'topo')}
           className={`btn ${s.cta}`}
           {...(external ? { target: '_blank', rel: 'noopener' } : {})}
         >
@@ -124,7 +124,7 @@ export function Header({ content, purchaseUrl }: { content: SiteContent['header'
             ))}
           </ul>
           <a
-            href={purchaseHref}
+            href={purchaseLink(purchaseUrl, 'menu')}
             onClick={close}
             className={`btn ${s.sheetCta}`}
             {...(external ? { target: '_blank', rel: 'noopener' } : {})}

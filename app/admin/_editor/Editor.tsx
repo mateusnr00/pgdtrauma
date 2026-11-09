@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState, useTransition } from 'react'
 import type { SiteContent } from '@/content/schema';
 import { site } from '@/content/book';
 import { getDefaults, getVersions, loadVersion, logout, saveContent } from '../actions';
+import { Dashboard } from '../_dashboard/Dashboard';
 import { Fields, type Path } from './Fields';
 import { sections } from './spec';
 import s from '../admin.module.css';
@@ -33,6 +34,12 @@ export function Editor({ initial, storeReady }: { initial: SiteContent; storeRea
   const [saving, startSaving] = useTransition();
   const [historyOpen, setHistoryOpen] = useState(false);
   const [versions, setVersions] = useState<Version[] | null>(null);
+  const [tab, setTab] = useState<'metricas' | 'conteudo'>('metricas');
+
+  const switchTab = (next: 'metricas' | 'conteudo') => {
+    setTab(next);
+    window.scrollTo({ top: 0 });
+  };
 
   const dirty = useMemo(() => JSON.stringify(content) !== JSON.stringify(saved), [content, saved]);
   const section = sections.find((x) => x.id === active) ?? sections[0];
@@ -55,6 +62,24 @@ export function Editor({ initial, storeReady }: { initial: SiteContent; storeRea
       }
     });
   }, [content]);
+
+  /** Publishes only the purchase link, leaving any other unpublished edits as drafts. */
+  const savePurchase = useCallback(() => {
+    startSaving(async () => {
+      const url = content.meta.purchaseUrl;
+      const result = await saveContent({ ...saved, meta: { ...saved.meta, purchaseUrl: url } });
+      if (result.ok) {
+        setSaved(result.content);
+        setContent((prev) => ({ ...prev, meta: { ...prev.meta, purchaseUrl: result.content.meta.purchaseUrl } }));
+        setVersions(null);
+        setStatus({ kind: 'ok', text: `Link de compra salvo às ${new Date(result.savedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}.` });
+      } else {
+        setStatus({ kind: 'error', text: result.error });
+      }
+    });
+  }, [content.meta.purchaseUrl, saved]);
+
+  const siteUrl = site.url.startsWith('http://localhost') ? 'https://pgdtraumatologia.com/pgdtrauma' : site.url;
 
   // Ctrl/Cmd + S saves.
   useEffect(() => {
@@ -102,34 +127,47 @@ export function Editor({ initial, storeReady }: { initial: SiteContent; storeRea
       <header className={s.topbar}>
         <div className={s.brand}>
           <span className={s.brandMark} aria-hidden="true" />
-          <span>
+          <span className={s.brandName}>
             <strong>Painel</strong> <span className={s.muted}>· Princípios Gerais da Traumatologia</span>
           </span>
         </div>
+        <nav className={s.tabs} aria-label="Área do painel">
+          <button type="button" aria-current={tab === 'metricas' ? 'page' : undefined} onClick={() => switchTab('metricas')}>
+            Métricas
+          </button>
+          <button type="button" aria-current={tab === 'conteudo' ? 'page' : undefined} onClick={() => switchTab('conteudo')}>
+            Conteúdo do site
+            {dirty && <span className={s.dot} aria-label="com alterações não publicadas" />}
+          </button>
+        </nav>
         <div className={s.topActions}>
-          <span className={s.state} data-dirty={dirty || undefined} role="status" aria-live="polite">
-            {saving ? 'Publicando…' : dirty ? 'Alterações não publicadas' : status?.kind === 'ok' ? status.text : 'Tudo publicado'}
-          </span>
+          {tab === 'conteudo' && (
+            <>
+              <span className={s.state} data-dirty={dirty || undefined} role="status" aria-live="polite">
+                {saving ? 'Publicando…' : dirty ? 'Alterações não publicadas' : status?.kind === 'ok' ? status.text : 'Tudo publicado'}
+              </span>
+              <button type="button" className={s.secondaryBtn} onClick={openHistory}>
+                Histórico
+              </button>
+              {dirty && (
+                <button
+                  type="button"
+                  className={s.secondaryBtn}
+                  onClick={() => {
+                    if (confirm('Descartar as alterações não publicadas?')) setContent(saved);
+                  }}
+                >
+                  Descartar
+                </button>
+              )}
+              <button type="button" className={s.primaryBtn} onClick={save} disabled={!dirty || saving || !storeReady}>
+                {saving ? 'Publicando…' : 'Publicar'}
+              </button>
+            </>
+          )}
           <a href={site.url.startsWith('http://localhost') ? '/pgdtrauma' : site.url} target="_blank" rel="noopener" className={s.secondaryBtn}>
             Ver site ↗
           </a>
-          <button type="button" className={s.secondaryBtn} onClick={openHistory}>
-            Histórico
-          </button>
-          {dirty && (
-            <button
-              type="button"
-              className={s.secondaryBtn}
-              onClick={() => {
-                if (confirm('Descartar as alterações não publicadas?')) setContent(saved);
-              }}
-            >
-              Descartar
-            </button>
-          )}
-          <button type="button" className={s.primaryBtn} onClick={save} disabled={!dirty || saving || !storeReady}>
-            {saving ? 'Publicando…' : 'Publicar'}
-          </button>
           <form action={logout}>
             <button type="submit" className={s.textBtn}>
               Sair
@@ -148,6 +186,19 @@ export function Editor({ initial, storeReady }: { initial: SiteContent; storeRea
       )}
       {status?.kind === 'ok' && dirty && <p className={s.banner}>{status.text}</p>}
 
+      {tab === 'metricas' ? (
+        <div className={s.wideBody}>
+          <Dashboard
+            purchaseUrl={content.meta.purchaseUrl}
+            savedPurchaseUrl={saved.meta.purchaseUrl}
+            onPurchaseChange={(v) => onChange(['meta', 'purchaseUrl'], v)}
+            onSave={savePurchase}
+            saving={saving}
+            canSave={storeReady}
+            siteUrl={siteUrl}
+          />
+        </div>
+      ) : (
       <div className={s.body}>
         <nav className={s.sidebar} aria-label="Seções do site">
           <label className={s.mobileNav}>
@@ -180,6 +231,7 @@ export function Editor({ initial, storeReady }: { initial: SiteContent; storeRea
           <Fields key={section.id} fields={section.fields} value={content[section.id] as unknown as Record<string, unknown>} path={[section.id]} onChange={onChange} />
         </main>
       </div>
+      )}
 
       {historyOpen && (
         <div className={s.overlay} onClick={() => setHistoryOpen(false)}>

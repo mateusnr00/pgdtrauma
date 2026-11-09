@@ -66,14 +66,14 @@ export function Contributors({ content: c, authors, lede, total }: Props) {
           ))}
           {others > 0 && (
             <li className={s.nameItem} data-reveal="fade">
-              <button type="button" className={s.more} onClick={openDrawer} aria-haspopup="dialog">
+              <button type="button" className={s.more} onClick={openDrawer} aria-haspopup="dialog" data-track="autores:ver-todos">
                 {fill(c.othersLabel, { n: others })}
               </button>
             </li>
           )}
         </ul>
 
-        <button type="button" className={`btn ${s.cta}`} onClick={openDrawer} aria-haspopup="dialog" data-reveal>
+        <button type="button" className={`btn ${s.cta}`} onClick={openDrawer} aria-haspopup="dialog" data-reveal data-track="autores:ver-todos">
           {c.button} <span className="btn-arrow" aria-hidden="true">→</span>
         </button>
       </div>

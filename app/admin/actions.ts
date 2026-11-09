@@ -5,6 +5,7 @@ import { endSession, goToAdmin, passwordMatches, requireAdmin, startSession } fr
 import { asContent, CONTENT_TAG, listVersions, readVersion, writeContent } from '@/lib/content-store';
 import { defaultContent } from '@/content/defaults';
 import type { SiteContent } from '@/content/schema';
+import { analyticsReady, report, resetAnalytics, type Report } from '@/lib/analytics';
 
 export type LoginState = { error?: string };
 
@@ -58,4 +59,23 @@ export async function loadVersion(url: string): Promise<SaveResult> {
 export async function getDefaults() {
   await requireAdmin();
   return asContent(defaultContent);
+}
+
+export type ReportResult = { ok: true; report: Report } | { ok: false; reason: 'not-configured' | 'error'; error?: string };
+
+export async function getReport(days: number): Promise<ReportResult> {
+  await requireAdmin();
+  if (!analyticsReady()) return { ok: false, reason: 'not-configured' };
+  try {
+    const safeDays = [1, 7, 30, 90, 365].includes(days) ? days : 30;
+    return { ok: true, report: await report(safeDays) };
+  } catch (error) {
+    console.error('analytics report:', error);
+    return { ok: false, reason: 'error', error: (error as Error).message };
+  }
+}
+
+export async function clearAnalytics() {
+  await requireAdmin();
+  if (analyticsReady()) await resetAnalytics();
 }

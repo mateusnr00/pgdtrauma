@@ -36,6 +36,7 @@ export function Modules({ content: c, lede }: { content: SiteContent['modules'];
             className={`link-cta ${s.all}`}
             onClick={() => setOpen(allOpen ? new Set() : new Set(modules.map((_, i) => i)))}
             data-reveal
+            data-track={allOpen ? 'sumario:recolher-todos' : 'sumario:abrir-todos'}
           >
             {allOpen ? c.collapseAll : c.expandAll}
           </button>
@@ -57,6 +58,7 @@ export function Modules({ content: c, lede }: { content: SiteContent['modules'];
                     aria-controls={id}
                     id={`${id}-btn`}
                     onClick={() => toggle(i)}
+                    data-track={isOpen ? undefined : `sumario:modulo-${m.numeral || i + 1}`}
                   >
                     <span className={s.numeral}>
                       <span className="sr-only">Módulo </span>

@@ -446,3 +446,47 @@ textarea.input { resize: vertical; min-height: 4.5rem; }
   .topbar { padding: 0.625rem 1rem; }
   .body { padding: 1rem 0.75rem 3rem; }
 }
+
+/* ---------- Tabs: Métricas / Conteúdo ---------- */
+.tabs {
+  display: inline-flex;
+  order: 3;
+  width: 100%;
+  gap: 0.25rem;
+  padding: 3px;
+  border-radius: 999px;
+  background: #eeece5;
+}
+.tabs button {
+  display: inline-flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.45rem 1rem;
+  border-radius: 999px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--a-ink-2);
+  transition: background-color 0.2s, color 0.2s, box-shadow 0.2s;
+}
+.tabs button:hover { color: var(--a-ink); }
+.tabs button[aria-current] {
+  background: var(--a-surface);
+  color: var(--a-ink);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.08), 0 4px 12px -6px rgb(0 0 0 / 0.15);
+}
+@media (min-width: 1180px) {
+  .tabs { order: 0; width: auto; }
+  .tabs button { flex: none; }
+}
+
+.wideBody {
+  padding: 1.5rem clamp(1rem, 3vw, 2rem) 4rem;
+  max-width: 82rem;
+  margin: 0 auto;
+}
+@media (max-width: 639px) {
+  .wideBody { padding: 1rem 0.75rem 3rem; }
+  .brandName .muted { display: none; }
+}

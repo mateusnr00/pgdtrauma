@@ -30,6 +30,7 @@ conteúdo de lançamento.
 | `ADMIN_PASSWORD` | Senha do painel. |
 | `ADMIN_SECRET` | Chave que assina a sessão (string aleatória longa). Trocar desconecta todos. |
 | `BLOB_READ_WRITE_TOKEN` | Criada automaticamente ao conectar o Blob store ao projeto. |
+| `DATABASE_URL` | Postgres das métricas (Neon/Supabase). Sem ela, as métricas ficam desligadas. |
 | `NEXT_PUBLIC_SITE_URL` | URL pública: canonical, Open Graph, JSON-LD, sitemap. |
 | `NEXT_PUBLIC_PURCHASE_URL` | Link de compra reserva, se o painel não tiver um. |
 
@@ -46,3 +47,17 @@ imagem de compartilhamento e o vídeo (sem áudio, MP4 + WebM + poster).
 
 Com `prefers-reduced-motion: reduce` a página exibe uma composição estática (sem pin/scroll
 narrativo). Para revisar a versão animada nessas máquinas, use `?motion=full` na URL.
+
+## Métricas (aba "Métricas" do painel)
+
+O painel abre na aba **Métricas**: visitantes, visualizações, cliques em "Adquirir livro", conversão,
+gráfico por dia, jornada do visitante (até onde as pessoas rolam), botão de compra que mais converte,
+origem das visitas (use os links com `utm_source` gerados no painel), dispositivos, países, cliques e
+horários de pico. Nessa aba também se troca o **link do botão de compra**.
+
+- Coleta: `components/Analytics.tsx` (visitas, seções, cliques) → `app/api/t`.
+- Compra: todos os botões apontam para `/pgdtrauma/comprar?de=<posição>`, que conta o clique e
+  redireciona para o link de compra salvo no painel (`app/comprar/route.ts`).
+- Armazenamento: Postgres em `DATABASE_URL` (ou `POSTGRES_URL`). A tabela `pgt_events` é criada
+  sozinha no primeiro uso. Na Vercel: **Storage → Create Database → Neon** e conectar ao projeto.
+- Anônimo: id aleatório em cookie próprio, sem IP. Robôs e o admin logado não contam.
