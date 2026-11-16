@@ -490,3 +490,12 @@ textarea.input { resize: vertical; min-height: 4.5rem; }
   .wideBody { padding: 1rem 0.75rem 3rem; }
   .brandName .muted { display: none; }
 }
+
+.success {
+  padding: 0.5rem 0.65rem;
+  border-radius: 8px;
+  background: #e5f3ea;
+  font-size: 0.8125rem;
+  color: #17643c;
+}
+.thumb[data-dragging] { outline: 2px dashed var(--a-green-2); outline-offset: 3px; }

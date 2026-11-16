@@ -232,8 +232,8 @@ export const sections: Section[] = [
   },
   {
     id: 'editor',
-    title: 'Editor',
-    description: 'Seção do editor da obra.',
+    title: 'Sobre o Dr. Marcos (foto)',
+    description: 'Seção do editor da obra, Prof. Dr. Marcos Rassi Fernandes: foto, nome e credenciais.',
     fields: [
       t('kicker', 'Rótulo da seção'),
       { kind: 'image', key: 'photo', label: 'Foto do editor', hint: 'Retrato vertical (ideal 1200 × 1500 px). Sem foto, a seção mostra só o nome.' },

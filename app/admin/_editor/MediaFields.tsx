@@ -23,6 +23,58 @@ async function uploadFile(file: File, onProgress: (pct: number) => void) {
   return blob.url;
 }
 
+const MAX_SIDE = 2400;
+const isHeic = (file: File) => /hei[cf]/i.test(file.type) || /\.hei[cf]$/i.test(file.name);
+
+/**
+ * Prepares a photo for the web before it leaves the browser: fixes the rotation, shrinks phone
+ * photos (often 4000px+, 8MB+) to at most 2400px and re-encodes them. PNG/WebP keep transparency
+ * (as WebP); everything else becomes JPEG. SVG and GIF go as they are.
+ */
+async function prepareImage(file: File): Promise<{ file: File; width: number; height: number }> {
+  if (/svg|gif/i.test(file.type)) {
+    const size = await readImageSize(file);
+    return { file, ...size };
+  }
+  let bitmap: ImageBitmap;
+  try {
+    bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
+  } catch {
+    if (isHeic(file)) {
+      throw new Error(
+        'Essa foto está no formato HEIC (padrão do iPhone), que o navegador não abre. No iPhone, abra a foto e use Compartilhar → Salvar em Arquivos como JPG, ou tire um print da foto, e envie de novo.',
+      );
+    }
+    throw new Error('Não foi possível abrir essa imagem. Envie uma foto em JPG ou PNG.');
+  }
+  const scale = Math.min(1, MAX_SIDE / Math.max(bitmap.width, bitmap.height));
+  const width = Math.round(bitmap.width * scale);
+  const height = Math.round(bitmap.height * scale);
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('Não foi possível preparar a imagem neste navegador.');
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(bitmap, 0, 0, width, height);
+  bitmap.close();
+  const keepAlpha = /png|webp/i.test(file.type);
+  const type = keepAlpha ? 'image/webp' : 'image/jpeg';
+  const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, type, keepAlpha ? 0.9 : 0.86));
+  if (!blob) throw new Error('Não foi possível preparar a imagem neste navegador.');
+  const base = file.name.replace(/\.[^.]+$/, '') || 'imagem';
+  return { file: new File([blob], `${base}.${keepAlpha ? 'webp' : 'jpg'}`, { type }), width, height };
+}
+
+/** Turns technical upload errors into something the editor can act on. */
+function friendly(error: unknown) {
+  const message = (error as Error)?.message || '';
+  if (/autorizado|unauthori|403|401/i.test(message)) return 'Sua sessão expirou. Saia e entre de novo no painel, depois envie a imagem outra vez.';
+  if (/content type|not allowed|tipo/i.test(message)) return 'Formato de arquivo não aceito. Envie a foto em JPG ou PNG.';
+  if (/network|fetch|failed to fetch/i.test(message)) return 'A conexão caiu durante o envio. Verifique a internet e tente de novo.';
+  return message || 'Falha no envio. Tente de novo.';
+}
+
 function readImageSize(file: File) {
   return new Promise<{ width: number; height: number }>((resolve, reject) => {
     const url = URL.createObjectURL(file);
@@ -45,7 +97,7 @@ function useUploader() {
     try {
       return await task(setProgress);
     } catch (e) {
-      setError((e as Error).message || 'Falha no envio.');
+      setError(friendly(e));
       return null;
     } finally {
       setProgress(null);
@@ -59,27 +111,46 @@ export function ImageField({ label, hint, value, onChange }: { label: string; hi
   const input = useRef<HTMLInputElement>(null);
   const altId = useId();
   const { progress, error, run } = useUploader();
+  const [justUploaded, setJustUploaded] = useState(false);
+  const [dragging, setDragging] = useState(false);
 
   const pick = async (file: File | undefined) => {
     if (!file) return;
+    setJustUploaded(false);
     const result = await run(async (onProgress) => {
-      const size = await readImageSize(file);
-      const src = await uploadFile(file, onProgress);
-      return { ...size, src };
+      const prepared = await prepareImage(file);
+      const src = await uploadFile(prepared.file, onProgress);
+      return { width: prepared.width, height: prepared.height, src };
     });
-    if (result) onChange({ ...media, ...result });
+    if (result) {
+      onChange({ ...media, ...result });
+      setJustUploaded(true);
+    }
   };
 
   return (
     <div className={s.field}>
       <p className={s.label}>{label}</p>
       <div className={s.media}>
-        <div className={s.thumb}>
+        <div
+          className={s.thumb}
+          data-dragging={dragging || undefined}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDragging(true);
+          }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setDragging(false);
+            pick(e.dataTransfer.files?.[0]);
+          }}
+        >
           {media.src ? (
             // eslint-disable-next-line @next/next/no-img-element -- admin preview of arbitrary uploads
             <img src={media.src} alt="" />
           ) : (
-            <span className={s.thumbEmpty}>Sem imagem</span>
+            <span className={s.thumbEmpty}>Arraste uma foto aqui</span>
           )}
         </div>
         <div className={s.mediaSide}>
@@ -87,7 +158,7 @@ export function ImageField({ label, hint, value, onChange }: { label: string; hi
             <button type="button" className={s.secondaryBtn} onClick={() => input.current?.click()} disabled={progress !== null}>
               {progress !== null ? `Enviando… ${progress}%` : media.src ? 'Trocar imagem' : 'Enviar imagem'}
             </button>
-            <input ref={input} type="file" accept="image/*" hidden onChange={(e) => pick(e.target.files?.[0]).then(() => (e.target.value = ''))} />
+            <input ref={input} type="file" accept="image/*,.heic,.heif" hidden onChange={(e) => pick(e.target.files?.[0]).then(() => (e.target.value = ''))} />
           </div>
           {media.src && (
             <p className={s.hint}>
@@ -95,7 +166,16 @@ export function ImageField({ label, hint, value, onChange }: { label: string; hi
             </p>
           )}
           {hint && <p className={s.hint}>{hint}</p>}
-          {error && <p className={s.error}>{error}</p>}
+          {error && (
+            <p className={s.error} role="alert">
+              {error}
+            </p>
+          )}
+          {justUploaded && !error && (
+            <p className={s.success} role="status">
+              Imagem enviada. Clique em <b>Publicar</b>, no topo, para ela aparecer no site.
+            </p>
+          )}
           <label htmlFor={altId} className={s.subLabel}>
             Descrição da imagem (acessibilidade e Google)
           </label>
